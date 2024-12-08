@@ -1,0 +1,44 @@
+version: "3"
+
+services:
+  db:
+    image: "postgres:latest"
+    restart: always
+    command:
+      ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
+    ports:
+      - 5432:5432
+    env_file:
+      - .envPostgres
+    environment:
+      POSTGRES_DB: stockMgmt
+    volumes:
+      - ${PWD}/db-data/:/var/lib/postgres/data/
+  s3:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./minio:/data
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: Test$123
+      MINIO_DEFAULT_BUCKETS: stock-photo
+    command: "server --console-address :9001 /data && chmod +x /storage/mc && /storage/mc alias set minio http://localhost:9000 minio Test$$123 --api S3v4 && /storage/mc policy set download stock-photo"
+  createBucket:
+    image: minio/mc
+    depends_on:
+      - s3
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://s3:9000 minio Test$123;
+      /usr/bin/mc mb myminio/stock-photo;
+      /usr/bin/mc anonymous set public myminio/stock-photo;
+      exit 0;
+      "
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
