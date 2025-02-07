@@ -1,29 +1,25 @@
-import { usersTable } from "./schema";
+import { users } from "./schema";
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import * as bcrypt from "bcrypt";
 
 const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
-  const userData: typeof usersTable.$inferInsert = {
-    firstName: "test",
-    lastName: "test",
+  const userData: typeof users.$inferInsert = {
     name: "test test",
-    sex: "male",
     role: "admin",
-    dob: "2000-10-10",
-    password: await bcrypt.hash("testing", 10),
+    password: await bcrypt.hash("test", 10),
     email: "tester@gmail.com",
     username: "tester",
   };
 
   try {
-    await db.delete(usersTable);
-    await db.insert(usersTable).values(userData);
+    await db.delete(users);
+    await db.insert(users).values(userData);
 
-    const users = await db
+    const user = await db
       .select()
-      .from(usersTable)
-      .where(eq(usersTable.username, userData.username));
+      .from(users)
+      .where(eq(users.username, userData.username));
 
     console.log(users);
   } catch (err) {

@@ -14,6 +14,8 @@ import {
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import { MdHome, MdOutlineInventory2 } from "react-icons/md";
+import { NavUser } from "./SidebarFooter";
+import { Session } from "next-auth";
 
 const items = [
   {
@@ -28,7 +30,11 @@ const items = [
   },
 ];
 
-export function AppSidebar() {
+interface AppSideBarProps {
+  session: Session | null;
+}
+
+export function AppSidebar({ session }: AppSideBarProps) {
   const path = usePathname();
   console.log(path);
   return (
@@ -60,6 +66,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <NavUser session={session} />
+      </SidebarFooter>
     </Sidebar>
   );
 }

@@ -9,14 +9,5 @@ export default function ProviderWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <SessionProvider>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarTrigger />
-        {children}
-      </SidebarProvider>
-      <Toaster position="bottom-right" />
-    </SessionProvider>
-  );
+  return <SessionProvider>{children}</SessionProvider>;
 }

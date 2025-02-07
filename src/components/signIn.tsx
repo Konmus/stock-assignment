@@ -39,22 +39,13 @@ const SignIn = () => {
       const res = await signIn("credentials", {
         ...data,
         redirect: false,
-        callbackUrl: "https://localhost:3000",
       });
-      if (res?.status === 401) {
-        setError(
-          "password",
-          { type: "custom", message: "Wrong email or password" },
-          {
-            shouldFocus: true,
-          },
-        );
+      if (res?.code === "invalid_password") {
+        setError("password", { type: "custom", message: "Wrong password" });
       }
-      if (res?.status === 200 || res?.ok) {
-        router.push("http://localhost:3000/");
-      }
-      if (res?.error) {
-        throw new Error(res.error);
+      if (res?.code !== "invalid_password") {
+        const decodedUrl = decodeURIComponent(callbackUrl ?? "");
+        router.push(callbackUrl ? decodedUrl : `/overview`);
       }
     } catch (err) {
       return err;
