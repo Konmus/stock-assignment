@@ -26,6 +26,13 @@ export const navItems = [
     icon: <MdHome />,
   },
   {
+    title: "Item",
+    url: "/item",
+    buttonPlaceholder: "Add Item",
+    hasPlaceholder: true,
+    icon: <MdOutlineInventory2 />,
+  },
+  {
     title: "Inventory",
     url: "/inventory",
     buttonPlaceholder: "Add Inventory",
