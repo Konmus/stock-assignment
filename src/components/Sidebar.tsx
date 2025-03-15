@@ -17,15 +17,26 @@ import { MdHome, MdOutlineInventory2 } from "react-icons/md";
 import { NavUser } from "./SidebarFooter";
 import { Session } from "next-auth";
 
-const items = [
+export const navItems = [
   {
-    title: "Home",
-    url: "/",
+    title: "Overview",
+    url: "/overview",
+    buttonPlaceholder: null,
+    hasPlaceholder: false,
     icon: <MdHome />,
   },
   {
     title: "Inventory",
     url: "/inventory",
+    buttonPlaceholder: "Add Inventory",
+    hasPlaceholder: true,
+    icon: <MdOutlineInventory2 />,
+  },
+  {
+    title: "User",
+    url: "/user",
+    buttonPlaceholder: "Add User",
+    hasPlaceholder: true,
     icon: <MdOutlineInventory2 />,
   },
 ];
@@ -47,7 +58,7 @@ export function AppSidebar({ session }: AppSideBarProps) {
           <SidebarGroupLabel className="">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <a

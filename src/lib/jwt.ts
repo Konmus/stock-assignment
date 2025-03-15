@@ -9,7 +9,7 @@ export async function signToken(payload: JWTPayload | undefined | JWT) {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setJti(nanoid())
-    .setExpirationTime("15s")
+    .setExpirationTime("30d")
     .sign(secretKey);
   return token;
 }

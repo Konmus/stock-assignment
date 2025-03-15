@@ -1,3 +1,4 @@
+"use client";
 import React, { InputHTMLAttributes, useEffect, useRef, useState } from "react";
 import {
   FieldValues,

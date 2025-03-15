@@ -77,7 +77,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   jwt: {
     encode: async function (params) {
       if (params.token?.credentials) {
-        const sessionToken = uuid();
+        const sessionToken = await signToken(params.token);
 
         if (!params.token.sub) {
           throw new Error("No user ID found in token");
