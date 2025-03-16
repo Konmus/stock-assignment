@@ -10,6 +10,8 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 
 export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
 export const roleEnum = pgEnum("role", ["admin", "user"]);
@@ -74,3 +76,6 @@ export const verificationTokens = pgTable(
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   }),
 );
+
+export const ZUser = createInsertSchema(users);
+export type TUser = z.infer<typeof ZUser>;
