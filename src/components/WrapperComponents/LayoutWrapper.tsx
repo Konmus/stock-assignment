@@ -32,11 +32,11 @@ export const LayoutWrapper = ({
   console.log(pathName);
   return (
     <>
+      <AppSidebar session={session} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b">
           <div className="flex items-center gap-2 px-3 w-full justify-between">
             <div className="flex items-center gap-2">
-              <AppSidebar session={session} />
               <SidebarTrigger />
               <Separator orientation="vertical" className="mr-2 h-4" />
               <Breadcrumb>
@@ -85,7 +85,7 @@ export const LayoutWrapper = ({
             })}
           </div>
         </header>
-        {children}
+        <div className="p-4">{children}</div>
       </SidebarInset>
       {pathName.includes("/user") && (
         <UserModal

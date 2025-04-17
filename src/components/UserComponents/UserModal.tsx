@@ -16,6 +16,9 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Button } from "../ui/button";
+import { useMutation } from "@/hooks/useMutation";
+import { SelectForm } from "../CustomSelectForm";
+import { roleOptions } from "@/const/selectConst";
 
 const userFormSchema = ZUser.extend({
   username: z
@@ -29,22 +32,16 @@ const userFormSchema = ZUser.extend({
   name: z.string().optional(),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string(),
   // Use any type for the file input and handle validation separately
   image: z.any().optional(),
-})
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  })
-  .refine(
-    (data) =>
-      !data.image || (data.image instanceof FileList && data.image.length > 0),
-    {
-      message: "Please upload a valid image file",
-      path: ["image"],
-    },
-  );
+}).refine(
+  (data) =>
+    !data.image || (data.image instanceof FileList && data.image.length > 0),
+  {
+    message: "Please upload a valid image file",
+    path: ["image"],
+  },
+);
 interface UserModalProps {
   onClose: () => void;
   isModalOpen: boolean;
@@ -56,6 +53,8 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
     control,
     setValue,
     handleSubmit,
+    watch,
+    setError,
     formState: { errors },
   } = useForm<TUser>({
     resolver: zodResolver(userFormSchema),
@@ -63,25 +62,85 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
       ...user,
     },
   });
-  const { trigger: addTrigger, isMutating: isAdding } = useSWRMutation(
-    "/api/assessment/",
-    async (url: string, { arg }: { arg: TUser }) => {
-      const requestData = {
-        ...arg,
-      };
-      return fetcher(url, {
-        method: "POST",
-        body: JSON.stringify(requestData),
-      });
-    },
+  const { trigger, isMutating: isAdding } = useMutation(
+    "create",
+    `/api/account`,
     {
-      onSuccess: () => {},
+      onSuccess: () => {
+        console.log("Hi");
+      },
     },
   );
+
   const onSubmit = async (data: TUser) => {
     try {
       console.log(data);
-      const res = await addTrigger(data);
+      const resIdentifier = await fetch("/api/auth/identifier", {
+        body: JSON.stringify(data),
+        method: "POST",
+      });
+      if (resIdentifier.status === 404) {
+        setError(
+          `username`,
+          {
+            type: "custom",
+            message: "Username already exist",
+          },
+          {
+            shouldFocus: true,
+          },
+        );
+      }
+      if (resIdentifier.status === 400) {
+        setError(
+          `email`,
+          {
+            type: "custom",
+            message: "Email already exist",
+          },
+          {
+            shouldFocus: true,
+          },
+        );
+      }
+      if (resIdentifier.ok) {
+        await trigger(data);
+        toast.success(
+          <div className="flex">
+            <span className="mr-1">Successfully Created User</span>
+            <>!</>
+          </div>,
+          { duration: 5000 },
+        );
+        onClose();
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error("An error occured while creating the User.");
+      return err;
+    }
+  };
+  const onEdit = async (data: TUser) => {
+    try {
+      console.log(data);
+      const res = await trigger(data);
+      toast.success(
+        <div className="flex">
+          <span className="mr-1">Successfully Created User</span>
+          <>!</>
+        </div>,
+        { duration: 5000 },
+      );
+      onClose();
+    } catch (err) {
+      toast.error("An error occured while creating the User.");
+      return err;
+    }
+  };
+  const onDelete = async (data: TUser) => {
+    try {
+      console.log(data);
+      const res = await trigger();
       console.log(res);
       toast.success(
         <div className="flex">
@@ -98,6 +157,7 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
     }
   };
   console.log(errors);
+  console.log(roleOptions);
 
   return (
     <>
@@ -110,7 +170,10 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
               account.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={user ? handleSubmit(onEdit) : handleSubmit(onSubmit)}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Input
@@ -152,11 +215,18 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
                 errors={errors.password}
               />
             </div>
+            <SelectForm
+              options={roleOptions}
+              onChange={() => console.log("hi")}
+              placeholder="Role:"
+              name="role"
+              control={control}
+            />
 
             <div className="space-y-2">
               <Input
-                name="image"
                 type="file"
+                name="image"
                 register={register}
                 errors={errors.image}
               />
@@ -172,7 +242,6 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
             </DialogFooter>
           </form>
         </DialogContent>
-        )
       </Dialog>
     </>
   );

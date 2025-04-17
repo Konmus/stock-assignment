@@ -28,12 +28,10 @@ export default async function RootLayout({
   console.log(session, "session");
   return (
     <>
-      <SidebarProvider>
-        <LayoutWrapper session={session}>
-          {children}
-          <Toaster position="bottom-right" />
-        </LayoutWrapper>
-      </SidebarProvider>
+      <LayoutWrapper session={session}>
+        {children}
+        <Toaster position="bottom-right" />
+      </LayoutWrapper>
     </>
   );
 }

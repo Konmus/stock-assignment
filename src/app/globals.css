@@ -8,6 +8,9 @@
 .error-message {
   @apply text-red-500 text-xs italic;
 }
+input[id^="react-select-"] {
+  @apply focus:outline-none focus:border-transparent focus:ring-0;
+}
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
