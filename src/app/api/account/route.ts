@@ -10,7 +10,6 @@ import { handleErrorRoute } from "@/lib/handleRouteError";
 
 // Validation schemas
 const createUserSchema = createInsertSchema(users);
-const updateUserSchema = createUpdateSchema(users);
 // GET: Fetch all users
 export async function GET() {
   try {
@@ -39,37 +38,6 @@ export async function POST(request: Request) {
       .returning();
 
     return NextResponse.json(newUser, { status: 201 });
-  } catch (error) {
-    return handleErrorRoute(error);
-  }
-}
-
-// PUT: Update a user
-export async function PUT(request: Request) {
-  try {
-    const body = await request.json();
-    const { id, ...updateData } = body;
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 },
-      );
-    }
-
-    const validatedData = updateUserSchema.parse(updateData);
-
-    const [updatedUser] = await db
-      .update(users)
-      .set(validatedData)
-      .where(eq(users.id, id))
-      .returning();
-
-    if (!updatedUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(updatedUser);
   } catch (error) {
     return handleErrorRoute(error);
   }

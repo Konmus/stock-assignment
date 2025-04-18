@@ -12,9 +12,14 @@ import { Button } from "./ui/button";
 interface ConfirmationProps {
   trigger: () => void;
   title: string;
+  isClicked: boolean;
 }
 
-export const ConfirmationModal = ({ trigger, title }: ConfirmationProps) => {
+export const ConfirmationModal = ({
+  trigger,
+  title,
+  isClicked,
+}: ConfirmationProps) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -28,7 +33,12 @@ export const ConfirmationModal = ({ trigger, title }: ConfirmationProps) => {
           Are you sure you want to delete?
         </div>
         <DialogFooter>
-          <Button type="button" variant="destructive" onClick={trigger}>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={isClicked}
+            onClick={trigger}
+          >
             Confirm
           </Button>
         </DialogFooter>

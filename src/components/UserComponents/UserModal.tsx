@@ -77,6 +77,15 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
       },
     },
   );
+  const { trigger: editTrigger, isMutating: isEditting } = useMutation(
+    "update",
+    `/api/account/${user?.id}`,
+    {
+      onSuccess: () => {
+        mutate("/api/account");
+      },
+    },
+  );
 
   const onSubmit = async (data: TUser) => {
     try {
@@ -113,7 +122,7 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
         await trigger(data);
         toast.success(
           <div className="flex">
-            <span className="mr-1">Successfully Created User</span>
+            <span className="mr-1">Successfully created User</span>
             <>!</>
           </div>,
           { duration: 5000 },
@@ -128,11 +137,10 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
   };
   const onEdit = async (data: TUser) => {
     try {
-      console.log(data);
-      const res = await trigger(data);
+      const res = await editTrigger(data);
       toast.success(
         <div className="flex">
-          <span className="mr-1">Successfully Created User</span>
+          <span className="mr-1">Successfully editted the User</span>
           <>!</>
         </div>,
         { duration: 5000 },
@@ -150,7 +158,7 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
       console.log(res);
       toast.success(
         <div className="flex">
-          <span className="mr-1">Successfully Created User</span>
+          <span className="mr-1">Successfully deleted the User</span>
           <>!</>
         </div>,
         { duration: 5000 },
@@ -214,17 +222,19 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
                 errors={errors.email}
               />
             </div>
+            {!user && (
+              <div className="space-y-2">
+                <Input
+                  name="password"
+                  label="Password:"
+                  watch={watch}
+                  type="password"
+                  register={register}
+                  errors={errors.password}
+                />
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <Input
-                name="password"
-                label="Password:"
-                watch={watch}
-                type="password"
-                register={register}
-                errors={errors.password}
-              />
-            </div>
             <SelectForm
               options={roleOptions}
               onChange={() => console.log("hi")}
@@ -233,27 +243,25 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
               control={control}
             />
 
-            <div className="space-y-2">
-              <Input
-                type="file"
-                name="image"
-                register={register}
-                errors={errors.image}
-              />
-            </div>
-
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
               {user && (
                 <ConfirmationModal
+                  isClicked={isDeleting}
                   trigger={() => onDelete(user?.id)}
                   title="Delete User"
                 />
               )}
-              <Button type="submit" disabled={isAdding}>
-                {isAdding ? "Saving..." : user ? "Update" : "Create"}
+              <Button type="submit" disabled={isAdding || isEditting}>
+                {isAdding
+                  ? "Saving..."
+                  : isEditting
+                    ? "Updating..."
+                    : user
+                      ? "Update"
+                      : "Create"}
               </Button>
             </DialogFooter>
           </form>
