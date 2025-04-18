@@ -19,6 +19,8 @@ import { Button } from "../ui/button";
 import { useMutation } from "@/hooks/useMutation";
 import { SelectForm } from "../CustomSelectForm";
 import { roleOptions } from "@/const/selectConst";
+import { ConfirmationModal } from "../ConfirmationModal";
+import { mutate } from "swr";
 
 const userFormSchema = ZUser.extend({
   username: z
@@ -34,14 +36,7 @@ const userFormSchema = ZUser.extend({
   password: z.string().min(8, "Password must be at least 8 characters"),
   // Use any type for the file input and handle validation separately
   image: z.any().optional(),
-}).refine(
-  (data) =>
-    !data.image || (data.image instanceof FileList && data.image.length > 0),
-  {
-    message: "Please upload a valid image file",
-    path: ["image"],
-  },
-);
+});
 interface UserModalProps {
   onClose: () => void;
   isModalOpen: boolean;
@@ -57,7 +52,9 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
     setError,
     formState: { errors },
   } = useForm<TUser>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(
+      user ? userFormSchema.omit({ password: true }) : userFormSchema,
+    ),
     defaultValues: {
       ...user,
     },
@@ -68,6 +65,15 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
     {
       onSuccess: () => {
         console.log("Hi");
+      },
+    },
+  );
+  const { trigger: deleteTrigger, isMutating: isDeleting } = useMutation(
+    "delete",
+    `/api/account/${user?.id}`,
+    {
+      onSuccess: () => {
+        mutate("/api/account");
       },
     },
   );
@@ -137,10 +143,10 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
       return err;
     }
   };
-  const onDelete = async (data: TUser) => {
+  const onDelete = async (data: TUser["id"]) => {
     try {
       console.log(data);
-      const res = await trigger();
+      const res = await deleteTrigger();
       console.log(res);
       toast.success(
         <div className="flex">
@@ -180,6 +186,7 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
                   name="username"
                   type="text"
                   register={register}
+                  watch={watch}
                   label="Username:"
                   errors={errors.username}
                 />
@@ -191,6 +198,7 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
                   label="Name:"
                   type="text"
                   register={register}
+                  watch={watch}
                   errors={errors.name}
                 />
               </div>
@@ -200,6 +208,7 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
               <Input
                 name="email"
                 type="email"
+                watch={watch}
                 label="Email:"
                 register={register}
                 errors={errors.email}
@@ -210,6 +219,7 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
               <Input
                 name="password"
                 label="Password:"
+                watch={watch}
                 type="password"
                 register={register}
                 errors={errors.password}
@@ -236,6 +246,12 @@ export const UserModal = ({ isModalOpen, onClose, user }: UserModalProps) => {
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
+              {user && (
+                <ConfirmationModal
+                  trigger={() => onDelete(user?.id)}
+                  title="Delete User"
+                />
+              )}
               <Button type="submit" disabled={isAdding}>
                 {isAdding ? "Saving..." : user ? "Update" : "Create"}
               </Button>

@@ -20,6 +20,7 @@ export const stocksTable = pgTable("stocks", {
   id: uuid().defaultRandom().primaryKey(),
   name: varchar({ length: 255 }).notNull(),
 });
+
 export const users = pgTable("user", {
   id: text("id")
     .primaryKey()

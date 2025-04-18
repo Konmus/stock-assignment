@@ -109,11 +109,12 @@ const FRCustomSelectForm = <T extends FieldValues>(
                 }
 
                 field.onChange(values);
+                console.log(field.value);
                 if (onChange) onChange(val);
               }}
               defaultValue={() => {
                 if (field.value)
-                  options?.find((i: any) => i.value === field.value);
+                  return options?.find((i: any) => i.value === field.value);
               }}
               options={options}
               className={`${classNames(className, "z-20")}`}

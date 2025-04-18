@@ -11,6 +11,7 @@ import {
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher"; // Your fetcher: fetch(url).then(res => res.json())
 import { TUser } from "@/lib/db/schema";
+import { UserModal } from "./UserModal";
 
 // Define columns
 const columns: ColumnDef<TUser>[] = [
@@ -48,7 +49,10 @@ const columns: ColumnDef<TUser>[] = [
 ];
 
 export const UserTable = () => {
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<TUser>();
   // Fetch data with useSWR
+
   const { data: users } = useSWR<TUser[]>("/api/account", fetcher, {
     suspense: true,
   });
@@ -104,7 +108,15 @@ export const UserTable = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50">
+              <tr
+                key={row.id}
+                onClick={() => {
+                  console.log("hi");
+                  setOpenModal(true);
+                  setSelectedRow(row.original);
+                }}
+                className="hover:bg-gray-50"
+              >
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
@@ -142,6 +154,13 @@ export const UserTable = () => {
           {table.getPageCount()}
         </div>
       </div>
+      {openModal && (
+        <UserModal
+          isModalOpen={openModal}
+          onClose={() => setOpenModal(false)}
+          user={selectedRow}
+        />
+      )}
     </div>
   );
 };
