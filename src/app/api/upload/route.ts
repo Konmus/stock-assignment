@@ -21,34 +21,59 @@ export async function GET(req: NextRequest) {
   try {
     const ex = req.nextUrl.searchParams.get("fileType")?.split("/")[1];
     console.log(ex);
+    const bucket = process.env.MINIO_DEFAULT_BUCKET || "item-photo";
     const Key = `${nanoid()}.${ex}`;
-    console.log(Key);
-    const s3Params = {
-      Bucket: process.env.BUCKET_NAME,
-      Key,
-      //ContentType: `image/${ex}`,
-    };
-    const command = new PutObjectCommand(s3Params);
-    /*const uploadUrl = await getSignedUrl(s3, command, {
-      expiresIn: 60,
-    }); */
+    // Check if bucket exists
+    console.log(`Checking if bucket ${bucket} exists...`);
+    const bucketExists = await minio.bucketExists(bucket);
+    console.log(bucketExists);
+    console.log(`Bucket ${bucket} does not exist. Creating...`);
+    if (!bucketExists) {
+      try {
+        await minio.makeBucket(bucket);
+        console.log(`Bucket ${bucket} created successfully.`);
+        // Set bucket policy after creation
+        const policy = {
+          Version: "2012-10-17",
+          Statement: [
+            {
+              Effect: "Allow",
+              Principal: { AWS: process.env.MINIO_ACCESS_KEY || "minioadmin" },
+              Action: ["s3:CreateBucket", "s3:PutObject", "s3:GetObject"],
+              Resource: [`arn:aws:s3:::${bucket}`, `arn:aws:s3:::${bucket}/*`],
+            },
+            {
+              Effect: "Allow",
+              Principal: { AWS: "*" },
+              Action: ["s3:GetObject"],
+              Resource: [`arn:aws:s3:::${bucket}/*`],
+            },
+          ],
+        };
+        await minio.setBucketPolicy(bucket, JSON.stringify(policy));
+        console.log(`Policy set for bucket ${bucket}.`);
+      } catch (error) {
+        console.error(`Failed to create or configure bucket ${bucket}:`, error);
+        throw new Error(
+          `Cannot create bucket ${bucket}: Access Denied or Configuration Error`,
+        );
+      }
+    }
+
     const uploadUrl = await new Promise((resolve, reject) => {
-      minio.presignedPutObject(
-        process.env.MINIO_DEFAULT_BUCKET!,
-        Key,
-        (e, presignedUrl) => {
-          if (e) {
-            reject(e);
-          }
-          resolve(presignedUrl);
-        },
-      );
+      minio.presignedPutObject("item-photo", Key, (e, presignedUrl) => {
+        if (e) {
+          reject(e);
+        }
+        resolve(presignedUrl);
+      });
     });
     return NextResponse.json({
       uploadUrl,
       Key,
     });
   } catch (err) {
+    console.log(err);
     return NextResponse.json(
       {
         message: "Internal Server Error",

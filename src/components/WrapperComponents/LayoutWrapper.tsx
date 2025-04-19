@@ -19,6 +19,7 @@ import { Session } from "next-auth";
 import { useParams, usePathname } from "next/navigation";
 import { Button } from "../ui/button";
 import { UserModal } from "../UserComponents/UserModal";
+import { ItemModal } from "../ItemComponents/ItemModal";
 export const LayoutWrapper = ({
   children,
   session,
@@ -89,6 +90,12 @@ export const LayoutWrapper = ({
       </SidebarInset>
       {pathName.includes("/user") && (
         <UserModal
+          isModalOpen={isModalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+      {pathName.includes("/item") && (
+        <ItemModal
           isModalOpen={isModalOpen}
           onClose={() => setModalOpen(false)}
         />

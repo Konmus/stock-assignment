@@ -1,6 +1,11 @@
+import { ItemTable } from "@/components/ItemComponents/ItemTable";
 import React from "react";
 async function Item() {
-  return <>hi</>;
+  return (
+    <>
+      <ItemTable />
+    </>
+  );
 }
 
 export default Item;
