@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import useSWR from "swr";
+import { PhotoProvider, PhotoView } from "react-photo-view";
+import Image from "next/image";
 import {
   ColumnDef,
   flexRender,
@@ -11,112 +13,104 @@ import {
 } from "@tanstack/react-table";
 import { fetcher } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
-
-// Define item type based on schema
-interface Item {
-  id: string;
-  name: string;
-  category: "Electronics" | "Furniture" | "Clothing" | "Other";
-  quantity: number;
-  imageUrl?: string;
-  price?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { ItemData, ItemModal, TData } from "./ItemModal";
+import { TItem, TSelectItem } from "@/lib/db/schema";
 
 // Define columns
-const columns: ColumnDef<Item>[] = [
-  {
-    accessorKey: "name",
-    header: "Name",
-    cell: ({ row }) => <span>{row.getValue("name")}</span>,
-    enableSorting: true,
-  },
-  {
-    accessorKey: "category",
-    header: "Category",
-    cell: ({ row }) => (
-      <span
-        className={`px-2 py-1 rounded-full text-xs ${
-          row.getValue("category") === "Electronics"
-            ? "bg-blue-100 text-blue-800"
-            : row.getValue("category") === "Furniture"
-              ? "bg-green-100 text-green-800"
-              : row.getValue("category") === "Clothing"
-                ? "bg-purple-100 text-purple-800"
-                : "bg-gray-100 text-gray-800"
-        }`}
-      >
-        {row.getValue("category")}
-      </span>
-    ),
-    enableSorting: true,
-  },
-  {
-    accessorKey: "quantity",
-    header: "Quantity",
-    cell: ({ row }) => <span>{row.getValue("quantity")}</span>,
-    enableSorting: true,
-  },
-  {
-    accessorKey: "price",
-    header: "Price",
-    cell: ({ row }) => (
-      <span>{row.getValue("price") ? `$${row.getValue("price")}` : "N/A"}</span>
-    ),
-    enableSorting: true,
-  },
-  {
-    accessorKey: "imageUrl",
-    header: "Image",
-    cell: ({ row }) => {
-      const imageUrl = row.getValue("imageUrl") as string | undefined;
-      const fullImageUrl = imageUrl
-        ? `http://localhost:9000/item-photo/${imageUrl}`
-        : undefined;
-      return fullImageUrl ? (
-        <img
-          src={fullImageUrl}
-          alt={row.getValue("name")}
-          className="h-12 w-12 object-cover rounded"
-        />
-      ) : (
-        <span>No Image</span>
-      );
-    },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Created At",
-    cell: ({ row }) => (
-      <span>{new Date(row.getValue("createdAt")).toLocaleDateString()}</span>
-    ),
-    enableSorting: true,
-  },
-  {
-    accessorKey: "updatedAt",
-    header: "Updated At",
-    cell: ({ row }) => (
-      <span>{new Date(row.getValue("updatedAt")).toLocaleDateString()}</span>
-    ),
-    enableSorting: true,
-  },
-];
 
 export function ItemTable() {
   const [openModal, setOpenModal] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<Item | undefined>();
+  const [selectedRow, setSelectedRow] = useState<TSelectItem>();
   const [isAdding, setIsAdding] = useState(false);
   const [isEditting, setIsEditting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch data with useSWR
-  const { data: items, error } = useSWR<Item[]>("/api/item", fetcher, {
+  const { data: items, error } = useSWR<TSelectItem[]>("/api/item", fetcher, {
     suspense: true,
   });
 
   // Table state
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const columns: ColumnDef<TSelectItem>[] = [
+    {
+      accessorKey: "imageUrl",
+      header: "Image",
+      cell: ({ row }) => {
+        const imageUrl = row.getValue("imageUrl") as string | undefined;
+        const fullImageUrl = imageUrl
+          ? `http://${process.env.NEXT_PUBLIC_BASE_URL}:9000/item-photo/${imageUrl}`
+          : undefined;
+        return fullImageUrl ? (
+          <>
+            <PhotoProvider>
+              <PhotoView src={fullImageUrl}>
+                <Image
+                  src={fullImageUrl}
+                  alt={row.getValue("name")}
+                  height={48}
+                  width={48}
+                  className="h-12 w-12 object-cover rounded"
+                />
+              </PhotoView>
+            </PhotoProvider>
+          </>
+        ) : (
+          <span>No Image</span>
+        );
+      },
+    },
+    {
+      accessorKey: "name",
+      header: "Name",
+      cell: ({ row }) => <span>{row.getValue("name")}</span>,
+      enableSorting: true,
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      cell: ({ row }) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            row.getValue("category") === "Electronics"
+              ? "bg-blue-100 text-blue-800"
+              : row.getValue("category") === "Furniture"
+                ? "bg-green-100 text-green-800"
+                : row.getValue("category") === "Clothing"
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-800"
+          }`}
+        >
+          {row.getValue("category")}
+        </span>
+      ),
+      enableSorting: true,
+    },
+    {
+      accessorKey: "quantity",
+      header: "Quantity",
+      cell: ({ row }) => <span>{row.getValue("quantity")}</span>,
+      enableSorting: true,
+    },
+    {
+      accessorKey: "price",
+      header: "Price",
+      cell: ({ row }) => (
+        <span>
+          {row.getValue("price") ? `$${row.getValue("price")}` : "N/A"}
+        </span>
+      ),
+      enableSorting: true,
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Created At",
+      cell: ({ row }) => (
+        <span>{new Date(row.getValue("createdAt")).toLocaleDateString()}</span>
+      ),
+      enableSorting: true,
+    },
+  ];
 
   // Initialize table
   const table = useReactTable({
@@ -211,6 +205,13 @@ export function ItemTable() {
           {table.getPageCount()}
         </div>
       </div>
+      {openModal && (
+        <ItemModal
+          isModalOpen={openModal}
+          onClose={() => setOpenModal(false)}
+          data={selectedRow}
+        />
+      )}
     </div>
   );
 }

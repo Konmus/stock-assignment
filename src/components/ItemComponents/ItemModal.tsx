@@ -1,10 +1,10 @@
 import { TItem, TUser, users, ZItem, ZUser } from "@/lib/db/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import React, { Suspense } from "react";
 import { useForm } from "react-hook-form";
 import useSWRMutation from "swr/mutation";
 import { z } from "zod";
-import { fetcher } from "@/lib/fetcher";
+import { fetcher, fetcherBlob } from "@/lib/fetcher";
 import toast from "react-hot-toast";
 import { Input } from "../Input";
 import {
@@ -24,7 +24,7 @@ import {
   statusOptions,
 } from "@/const/selectConst";
 import { ConfirmationModal } from "../ConfirmationModal";
-import { mutate } from "swr";
+import useSWR, { mutate } from "swr";
 import { DateCalenderForm } from "../DateCalenderForm";
 import { numberNaNToNull } from "@/lib/numberNaNToNull";
 import { isRequired } from "@/utils/isRequired";
@@ -46,13 +46,29 @@ const validatedForm = ZItem.extend({
     }),
 });
 
-type TData = z.infer<typeof validatedForm>;
+const validatedFormImage = validatedForm.extend({
+  imageUrl: z.string().nullish(),
+});
+
+export type TData = z.infer<typeof validatedForm>;
+export type ItemData = z.infer<typeof validatedFormImage>;
 interface ModalProps {
   onClose: () => void;
   isModalOpen: boolean;
-  data?: TData;
+  data?: ItemData;
 }
 export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
+  const imageUrl = data?.imageUrl
+    ? `http://${process.env.NEXT_PUBLIC_BASE_URL}:9000/item-photo/${data.imageUrl}`
+    : null;
+  const { data: imageFile } = useSWR<File>(
+    imageUrl ? [imageUrl, data?.imageUrl] : null, // Pass filename along with URL
+    ([url, filename]) => fetcherBlob(url, filename as string), // Fetcher now receives both
+    {
+      suspense: true,
+    },
+  );
+  console.log(imageFile);
   const {
     register,
     control,
@@ -66,6 +82,7 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
     resolver: zodResolver(validatedForm),
     defaultValues: {
       ...data,
+      imageUrl: [imageFile],
     },
   });
   const { trigger, isMutating: isAdding } = useSWRMutation(
@@ -81,22 +98,37 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
         body: JSON.stringify(requestData),
       });
     },
-  );
-  const { trigger: deleteTrigger, isMutating: isDeleting } = useMutation(
-    "delete",
-    `/api/account/${data?.id}`,
     {
       onSuccess: () => {
-        mutate("/api/account");
+        mutate("/api/item");
       },
     },
   );
-  const { trigger: editTrigger, isMutating: isEditting } = useMutation(
-    "update",
-    `/api/account/${data?.id}`,
+  const { trigger: deleteTrigger, isMutating: isDeleting } = useMutation(
+    "delete",
+    `/api/item/${data?.id}`,
     {
       onSuccess: () => {
-        mutate("/api/account");
+        mutate("/api/item");
+      },
+    },
+  );
+  const { trigger: editTrigger, isMutating: isEditting } = useSWRMutation(
+    `/api/item/${data?.id}`,
+    async (url: string, { arg }: { arg: TData }) => {
+      const imageBase64 = await filetoBase64(arg.imageUrl);
+      const requestData = {
+        ...arg,
+        imageUrl: imageBase64,
+      };
+      return fetcher(url, {
+        method: "PUT",
+        body: JSON.stringify(requestData),
+      });
+    },
+    {
+      onSuccess: () => {
+        mutate("/api/item");
       },
     },
   );

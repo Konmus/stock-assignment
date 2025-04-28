@@ -8,11 +8,11 @@ import {
   varchar,
   text,
   timestamp,
-  decimal,
+  doublePrecision,
   serial,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
-import { createInsertSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
@@ -93,9 +93,9 @@ export const items = pgTable("item", {
   category: itemCategoryEnum("category").notNull().default("Other"),
   quantity: integer("quantity").notNull(),
   imageUrl: varchar("imageUrl"),
-  price: decimal("price", { precision: 10, scale: 2 }), // Optional price
-  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  price: doublePrecision("price"), // Optional price
+  createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "string" }).notNull().defaultNow(),
 });
 export const itemLocation = pgTable("item_location", {
   id: text("id")
@@ -108,7 +108,9 @@ export const itemLocation = pgTable("item_location", {
     .notNull()
     .references(() => location.id, { onDelete: "cascade" }),
   quantity: integer("quantity").notNull().default(0), // Number of items allocated to this location
-  assignedAt: timestamp("assigned_at", { mode: "date" }).notNull().defaultNow(),
+  assignedAt: timestamp("assigned_at", { mode: "string" })
+    .notNull()
+    .defaultNow(),
 });
 export const stock = pgTable("stock", {
   id: text("id")
@@ -119,11 +121,11 @@ export const stock = pgTable("stock", {
     .references(() => items.id, { onDelete: "cascade" }),
   quantity: integer("quantity").notNull().default(0),
   status: itemStatusEnum("status").notNull().default("Available"),
-  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
   createdBy: text("created_by")
     .notNull()
     .references(() => users.id, { onDelete: "restrict" }),
-  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "string" }).notNull().defaultNow(),
   updatedBy: text("updated_by")
     .notNull()
     .references(() => users.id, { onDelete: "restrict" }),
@@ -226,8 +228,14 @@ export const verificationTokens = pgTable(
   }),
 );
 
-export const ZUser = createInsertSchema(users);
+export const ZUser = createInsertSchema(users).extend({
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
 export type TUser = z.infer<typeof ZUser>;
 
 export const ZItem = createInsertSchema(items);
 export type TItem = z.infer<typeof ZItem>;
+
+export const ZSelectItem = createSelectSchema(items).extend({});
+export type TSelectItem = z.infer<typeof ZSelectItem>;
