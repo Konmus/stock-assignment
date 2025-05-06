@@ -1,4 +1,4 @@
-import { TItem, TUser, users, ZItem, ZUser } from "@/lib/db/schema";
+import { TItem, TUser, users, ZItem, ZStock, ZUser } from "@/lib/db/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { Suspense } from "react";
 import { useForm } from "react-hook-form";
@@ -27,25 +27,22 @@ import { isRequired } from "@/utils/isRequired";
 import { UploadForm } from "../UploadForm";
 import { filetoBase64 } from "@/lib/binaryToBase64";
 import { ISelect } from "@/types/SelectOptions";
+import { useParams } from "next/navigation";
 
-const validatedForm = ZItem.extend({
-  price: numberNaNToNull(),
-  quantity: z.number({
-    invalid_type_error: isRequired("Quantity"),
-    required_error: isRequired("Quantity"),
-  }),
-  imageUrl: z
-    .array(z.custom<File>())
-    .min(1, "Please select one image")
-    .refine((files) => files.every((file) => file.size <= 10 * 1024 * 1024), {
-      message: "File size must be less than 10MB",
-      path: ["imageUrl"],
-    }),
+const validatedForm = ZStock.extend({
+  inventoryItemId: z.string().min(1, "Item is required"),
+  locationId: z.string().min(1, "Location is required"),
+  quantity: z
+    .number()
+    .int("Quantity must be an integer")
+    .min(0, "Quantity cannot be negative"),
+  notes: z.string().optional(),
+  id: z.string().optional(),
+  lastUpdated: z.string().optional(),
+  status: z.string().nullish(),
 });
 
-const validatedFormImage = validatedForm.extend({
-  imageUrl: z.string().nullish(),
-});
+const validatedFormImage = validatedForm.extend({});
 
 export type TData = z.infer<typeof validatedForm>;
 export type ItemData = z.infer<typeof validatedFormImage>;
@@ -54,18 +51,8 @@ interface ModalProps {
   isModalOpen: boolean;
   data?: ItemData;
 }
-export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
-  const imageUrl = data?.imageUrl
-    ? `http://${process.env.NEXT_PUBLIC_BASE_URL}:9000/item-photo/${data.imageUrl}`
-    : null;
-  const { data: imageFile } = useSWR<File>(
-    imageUrl ? [imageUrl, data?.imageUrl] : null, // Pass filename along with URL
-    ([url, filename]) => fetcherBlob(url, filename as string), // Fetcher now receives both
-    {
-      suspense: true,
-    },
-  );
-  console.log(imageFile);
+export const AddStockModal = ({ isModalOpen, onClose, data }: ModalProps) => {
+  const queryParams = useParams();
   const {
     register,
     control,
@@ -79,16 +66,14 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
     resolver: zodResolver(validatedForm),
     defaultValues: {
       ...data,
-      imageUrl: data ? [imageFile] : [],
+      inventoryItemId: data ? data.inventoryItemId : (queryParams.id as string),
     },
   });
   const { trigger, isMutating: isAdding } = useSWRMutation(
-    "/api/item/",
+    "/api/stock/",
     async (url: string, { arg }: { arg: TData }) => {
-      const imageBase64 = await filetoBase64(arg.imageUrl);
       const requestData = {
         ...arg,
-        imageUrl: imageBase64,
       };
       return fetcher(url, {
         method: "POST",
@@ -97,26 +82,24 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
     },
     {
       onSuccess: () => {
-        mutate("/api/item");
+        mutate("/api/stock");
       },
     },
   );
   const { trigger: deleteTrigger, isMutating: isDeleting } = useMutation(
     "delete",
-    `/api/item/${data?.id}`,
+    `/api/stock/${data?.id}`,
     {
       onSuccess: () => {
-        mutate("/api/item");
+        mutate("/api/stock");
       },
     },
   );
   const { trigger: editTrigger, isMutating: isEditting } = useSWRMutation(
-    `/api/item/${data?.id}`,
+    `/api/stock/${data?.id}`,
     async (url: string, { arg }: { arg: TData }) => {
-      const imageBase64 = await filetoBase64(arg.imageUrl);
       const requestData = {
         ...arg,
-        imageUrl: imageBase64,
       };
       return fetcher(url, {
         method: "PUT",
@@ -125,14 +108,13 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
     },
     {
       onSuccess: () => {
-        mutate("/api/item");
+        mutate("/api/stock");
       },
     },
   );
 
   const onSubmit = async (data: TData) => {
     try {
-      console.log(data.imageUrl, "testing");
       await trigger(data);
       toast.success(
         <div className="flex">
@@ -187,8 +169,8 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
   };
   console.log(errors);
   console.log(roleOptions);
-  const { data: categoryOptions } = useSWR<ISelect[]>(
-    `/api/category?selectOption=true`,
+  const { data: locationsOptions } = useSWR<ISelect[]>(
+    `/api/location?selectOption=true`,
     fetcher,
     {
       suspense: true,
@@ -211,21 +193,11 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
           >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Input
-                  name="name"
-                  type="text"
-                  label="Name:"
-                  register={register}
-                  watch={watch}
-                  errors={errors.name}
-                />
-              </div>
-              <div className="space-y-2">
                 <SelectForm
-                  name="categoryId"
+                  name="locationId"
                   control={control}
-                  placeholder="Category:"
-                  options={categoryOptions}
+                  placeholder="Location:"
+                  options={locationsOptions}
                 />
               </div>
             </div>
@@ -243,27 +215,6 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
                   errors={errors.quantity}
                 />
               </div>
-              <div className="space-y-2">
-                <Input
-                  name="price"
-                  registerOptions={{ valueAsNumber: true }}
-                  step="any"
-                  type="number"
-                  label="Purchased Price:"
-                  register={register}
-                  unit="$ per item"
-                  watch={watch}
-                  errors={errors.price}
-                />
-              </div>
-            </div>
-            <div className="gap-4">
-              <UploadForm
-                setError={setError}
-                control={control}
-                name="imageUrl"
-                errors={errors.imageUrl && errors.imageUrl[0]}
-              />
             </div>
 
             <DialogFooter>

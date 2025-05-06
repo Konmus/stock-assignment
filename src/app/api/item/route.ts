@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const requestBody = await request.json();
 
     // Validate input
-    const { name, quantity, category, price, imageUrl } =
+    const { name, quantity, categoryId, price, imageUrl } =
       itemPostSchema.parse(requestBody);
 
     const imageUrlKey = await uploadToMinio(imageUrl);
@@ -33,10 +33,10 @@ export async function POST(request: Request) {
       .insert(items)
       .values({
         name: name,
-        category: category,
         quantity: quantity,
         price: price,
         imageUrl: imageUrlKey,
+        categoryId: categoryId,
       })
       .returning();
 

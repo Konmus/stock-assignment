@@ -15,6 +15,7 @@ import { fetcher } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
 import { ItemData, ItemModal, TData } from "./ItemModal";
 import { TItem, TSelectItem } from "@/lib/db/schema";
+import { useRouter } from "next/navigation";
 
 // Define columns
 
@@ -24,6 +25,7 @@ export function ItemTable() {
   const [isAdding, setIsAdding] = useState(false);
   const [isEditting, setIsEditting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
 
   // Fetch data with useSWR
   const { data: items, error } = useSWR<TSelectItem[]>("/api/item", fetcher, {
@@ -163,8 +165,8 @@ export function ItemTable() {
               <tr
                 key={row.id}
                 onClick={() => {
-                  setOpenModal(true);
                   setSelectedRow(row.original);
+                  router.push(`/item/${row.original.id}`);
                 }}
                 className="hover:bg-gray-50 cursor-pointer"
               >

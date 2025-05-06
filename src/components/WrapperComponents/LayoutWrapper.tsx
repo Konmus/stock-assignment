@@ -20,6 +20,11 @@ import { useParams, usePathname } from "next/navigation";
 import { Button } from "../ui/button";
 import { UserModal } from "../UserComponents/UserModal";
 import { ItemModal } from "../ItemComponents/ItemModal";
+import { CategoryModal } from "../CategoryComponents/CategoryModal";
+import { LocationModal } from "../LocationComponents/LocationModal";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
+import { TItem, TStockItem } from "@/lib/db/schema";
 export const LayoutWrapper = ({
   children,
   session,
@@ -30,6 +35,16 @@ export const LayoutWrapper = ({
   const [isModalOpen, setModalOpen] = React.useState(false);
   const pathName = usePathname();
   const queryParams = useParams();
+  const { data } = useSWR<TStockItem>(
+    pathName.includes(`/item/${queryParams.id}`)
+      ? `/api/item/${queryParams.id}`
+      : null,
+    fetcher,
+    {
+      suspense: true,
+    },
+  );
+  console.log(data);
   console.log(pathName);
   return (
     <>
@@ -73,17 +88,31 @@ export const LayoutWrapper = ({
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
-            {navItems.map(({ url, hasPlaceholder, buttonPlaceholder }) => {
-              return (
-                <React.Fragment key={url}>
-                  {pathName.includes(url) && hasPlaceholder && (
-                    <Button onClick={() => setModalOpen(true)}>
-                      {buttonPlaceholder}
-                    </Button>
-                  )}
-                </React.Fragment>
-              );
-            })}
+            {navItems.map(
+              ({
+                url,
+                hasPlaceholder,
+                buttonPlaceholder,
+                buttonPlaceholderEdit,
+              }) => {
+                return (
+                  <React.Fragment key={url}>
+                    {pathName.includes(url) &&
+                      hasPlaceholder &&
+                      !queryParams.id && (
+                        <Button onClick={() => setModalOpen(true)}>
+                          {buttonPlaceholder}
+                        </Button>
+                      )}
+                    {pathName.includes(url) && queryParams.id && (
+                      <Button onClick={() => setModalOpen(true)}>
+                        {buttonPlaceholderEdit}
+                      </Button>
+                    )}
+                  </React.Fragment>
+                );
+              },
+            )}
           </div>
         </header>
         <div className="p-4">{children}</div>
@@ -98,6 +127,25 @@ export const LayoutWrapper = ({
         <ItemModal
           isModalOpen={isModalOpen}
           onClose={() => setModalOpen(false)}
+        />
+      )}
+      {pathName.includes("/category") && (
+        <CategoryModal
+          isModalOpen={isModalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+      {pathName.includes("/location") && (
+        <LocationModal
+          isModalOpen={isModalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+      {pathName.includes(`/item/${queryParams.id}`) && queryParams.id && (
+        <ItemModal
+          isModalOpen={isModalOpen}
+          onClose={() => setModalOpen(false)}
+          data={data?.item}
         />
       )}
     </>

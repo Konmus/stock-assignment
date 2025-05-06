@@ -10,21 +10,19 @@ import {
   timestamp,
   doublePrecision,
   serial,
+  boolean,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import {
+  createInsertSchema,
+  CreateSelectSchema,
+  createSelectSchema,
+} from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
 export const roleEnum = pgEnum("role", ["admin", "user"]);
-export const itemCategoryEnum = pgEnum("item_category", [
-  "Book",
-  "Stationery",
-  "Equipment",
-  "Table", // Changed from 'Furniture' to 'Table' for specificity
-  "Other",
-]);
 export const itemStatusEnum = pgEnum("item_status", [
   "Available",
   "In Use",
@@ -32,11 +30,6 @@ export const itemStatusEnum = pgEnum("item_status", [
   "Lost",
 ]);
 export const auditActionEnum = pgEnum("action", ["create", "update", "delete"]);
-
-export const stocksTable = pgTable("stocks", {
-  id: uuid().defaultRandom().primaryKey(),
-  name: varchar({ length: 255 }).notNull(),
-});
 
 export const users = pgTable("user", {
   id: text("id")
@@ -51,23 +44,15 @@ export const users = pgTable("user", {
   role: roleEnum().notNull().default("user"),
 });
 
-export const location = pgTable("location", {
+export const locations = pgTable("locations", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  itemId: text("item_id")
-    .notNull()
-    .references(() => items.id, { onDelete: "cascade" }),
-  place: varchar("place", { length: 255 }).notNull(), // e.g., "Room 520", "Courtyard"
-  description: text("description"), // e.g., "Mounted on north wall"
-  total: integer("total").notNull().default(0), // Number of items at this location
-  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
-  updatedBy: text("updated_by")
-    .notNull()
-    .references(() => users.id, { onDelete: "restrict" }),
-  createdBy: text("created_by")
-    .notNull()
-    .references(() => users.id, { onDelete: "restrict" }),
+  name: varchar("name", { length: 100 }).notNull(),
+  imageUrl: text("imageUrl"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 // Audit log table
 export const auditLog = pgTable("audit_log", {
@@ -83,6 +68,15 @@ export const auditLog = pgTable("audit_log", {
   timestamp: timestamp("timestamp", { mode: "date" }).notNull().defaultNow(),
   details: text("details"),
 });
+export const categories = pgTable("categories", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 // Item table (includes tables)
 export const items = pgTable("item", {
@@ -90,90 +84,77 @@ export const items = pgTable("item", {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: varchar("name", { length: 255 }).notNull(),
-  category: itemCategoryEnum("category").notNull().default("Other"),
   quantity: integer("quantity").notNull(),
+  categoryId: text("category_id").references(() => categories.id, {
+    onDelete: "set null",
+  }),
   imageUrl: varchar("imageUrl"),
+  supplier: varchar("supplier", { length: 255 }),
   price: doublePrecision("price"), // Optional price
   createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "string" }).notNull().defaultNow(),
-});
-export const itemLocation = pgTable("item_location", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  itemId: text("item_id")
-    .notNull()
-    .references(() => items.id, { onDelete: "cascade" }),
-  locationId: text("location_id")
-    .notNull()
-    .references(() => location.id, { onDelete: "cascade" }),
-  quantity: integer("quantity").notNull().default(0), // Number of items allocated to this location
-  assignedAt: timestamp("assigned_at", { mode: "string" })
-    .notNull()
-    .defaultNow(),
 });
 export const stock = pgTable("stock", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  itemId: text("item_id")
-    .notNull()
-    .references(() => items.id, { onDelete: "cascade" }),
+  inventoryItemId: text("itemId")
+    .references(() => items.id, { onDelete: "cascade" })
+    .notNull(),
+  locationId: text("location_id")
+    .references(() => locations.id, { onDelete: "cascade" })
+    .notNull(),
   quantity: integer("quantity").notNull().default(0),
-  status: itemStatusEnum("status").notNull().default("Available"),
-  createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
-  createdBy: text("created_by")
-    .notNull()
-    .references(() => users.id, { onDelete: "restrict" }),
-  updatedAt: timestamp("updated_at", { mode: "string" }).notNull().defaultNow(),
-  updatedBy: text("updated_by")
-    .notNull()
-    .references(() => users.id, { onDelete: "restrict" }),
+  status: itemStatusEnum("status").default("Available"),
+  notes: text("notes"),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
 });
+export const stockHistory = pgTable("stock_history", {
+  id: serial("id").primaryKey(),
+  stockId: text("stock_id")
+    .references(() => stock.id, { onDelete: "cascade" })
+    .notNull(),
+  previousQuantity: integer("previous_quantity").notNull(),
+  newQuantity: integer("new_quantity").notNull(),
+  changeReason: varchar("change_reason", { length: 255 }),
+  userId: text("user_id").references(() => users.id), // For future user authentication
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  inventoryItems: many(items),
+}));
 
-export const stockRelations = relations(stock, ({ many, one }) => ({
-  locations: many(location),
-  item: one(items, {
-    fields: [stock.itemId],
+export const locationsRelations = relations(locations, ({ many }) => ({
+  stock: many(stock),
+}));
+
+export const inventoryItemsRelations = relations(items, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [items.categoryId],
+    references: [categories.id],
+  }),
+  stock: many(stock),
+}));
+
+export const stockRelations = relations(stock, ({ one, many }) => ({
+  inventoryItem: one(items, {
+    fields: [stock.inventoryItemId],
     references: [items.id],
   }),
-  createdBy: one(users, {
-    fields: [stock.createdBy],
-    references: [users.id],
+  location: one(locations, {
+    fields: [stock.locationId],
+    references: [locations.id],
   }),
-  updatedBy: one(users, {
-    fields: [stock.updatedBy],
-    references: [users.id],
-  }),
+  history: many(stockHistory),
 }));
 
-export const locationRelations = relations(location, ({ many, one }) => ({
-  stocks: many(location),
-  createdBy: one(users, {
-    fields: [location.createdBy],
-    references: [users.id],
-  }),
-  updatedBy: one(users, {
-    fields: [location.updatedBy],
-    references: [users.id],
-  }),
-}));
-
-export const stockLocationRelations = relations(location, ({ one }) => ({
+export const stockHistoryRelations = relations(stockHistory, ({ one }) => ({
   stock: one(stock, {
-    fields: [location.id],
+    fields: [stockHistory.stockId],
     references: [stock.id],
   }),
-  location: one(location, {
-    fields: [location.id],
-    references: [location.id],
-  }),
-  createdBy: one(users, {
-    fields: [location.createdBy],
-    references: [users.id],
-  }),
-  updatedBy: one(users, {
-    fields: [location.updatedBy],
+  user: one(users, {
+    fields: [stockHistory.userId],
     references: [users.id],
   }),
 }));
@@ -239,3 +220,23 @@ export type TItem = z.infer<typeof ZItem>;
 
 export const ZSelectItem = createSelectSchema(items).extend({});
 export type TSelectItem = z.infer<typeof ZSelectItem>;
+
+export const ZCategory = createSelectSchema(categories).extend({
+  itemCount: z.number(),
+});
+export type TCategory = z.infer<typeof ZCategory>;
+
+export const ZLocation = createSelectSchema(locations).extend({
+  itemCount: z.number(),
+});
+export type TLocation = z.infer<typeof ZLocation>;
+
+export const ZStock = createSelectSchema(stock);
+export type TStock = z.infer<typeof ZStock>;
+
+export const ZStockItem = z.object({
+  item: ZItem,
+  stock: ZStock.array(),
+  categories: ZCategory.nullish(),
+});
+export type TStockItem = z.infer<typeof ZStockItem>;
