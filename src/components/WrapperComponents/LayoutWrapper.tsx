@@ -145,7 +145,7 @@ export const LayoutWrapper = ({
         <ItemModal
           isModalOpen={isModalOpen}
           onClose={() => setModalOpen(false)}
-          data={data?.item}
+          data={data}
         />
       )}
     </>

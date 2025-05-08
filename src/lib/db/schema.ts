@@ -38,7 +38,7 @@ export const users = pgTable("user", {
   username: varchar({ length: 255 }).unique().notNull(),
   name: text("name"),
   email: text("email").notNull().unique(),
-  emailVerified: timestamp("emailVerified", { mode: "date" }),
+  emailVerified: timestamp("emailVerified", { mode: "string" }),
   image: text("image"),
   password: text("password"),
   role: roleEnum().notNull().default("user"),
@@ -90,6 +90,7 @@ export const items = pgTable("item", {
   }),
   imageUrl: varchar("imageUrl"),
   supplier: varchar("supplier", { length: 255 }),
+  supplierPhone: varchar("supplierPhone", { length: 255 }),
   price: doublePrecision("price"), // Optional price
   createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "string" }).notNull().defaultNow(),
@@ -107,7 +108,9 @@ export const stock = pgTable("stock", {
   quantity: integer("quantity").notNull().default(0),
   status: itemStatusEnum("status").default("Available"),
   notes: text("notes"),
-  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  lastUpdated: timestamp("last_updated", { mode: "string" })
+    .defaultNow()
+    .notNull(),
 });
 export const stockHistory = pgTable("stock_history", {
   id: serial("id").primaryKey(),
@@ -194,7 +197,7 @@ export const sessions = pgTable("session", {
   userId: text("userId")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires", { mode: "date" }).notNull(),
+  expires: timestamp("expires", { mode: "string" }).notNull(),
 });
 
 export const verificationTokens = pgTable(
@@ -202,7 +205,7 @@ export const verificationTokens = pgTable(
   {
     identifier: text("identifier").notNull(),
     token: text("token").notNull(),
-    expires: timestamp("expires", { mode: "date" }).notNull(),
+    expires: timestamp("expires", { mode: "string" }).notNull(),
   },
   (vt) => ({
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
@@ -234,9 +237,11 @@ export type TLocation = z.infer<typeof ZLocation>;
 export const ZStock = createSelectSchema(stock);
 export type TStock = z.infer<typeof ZStock>;
 
-export const ZStockItem = z.object({
-  item: ZItem,
-  stock: ZStock.array(),
-  categories: ZCategory.nullish(),
+export const ZStockItem = ZItem.extend({
+  stock: ZStock.extend({
+    location: ZLocation,
+    lastUpdated: z.string().optional(),
+  }).array(),
+  category: ZCategory.nullish(),
 });
 export type TStockItem = z.infer<typeof ZStockItem>;

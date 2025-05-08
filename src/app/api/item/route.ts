@@ -22,8 +22,15 @@ export async function POST(request: Request) {
     const requestBody = await request.json();
 
     // Validate input
-    const { name, quantity, categoryId, price, imageUrl } =
-      itemPostSchema.parse(requestBody);
+    const {
+      name,
+      quantity,
+      supplier,
+      supplierPhone,
+      categoryId,
+      price,
+      imageUrl,
+    } = itemPostSchema.parse(requestBody);
 
     const imageUrlKey = await uploadToMinio(imageUrl);
 
@@ -34,6 +41,8 @@ export async function POST(request: Request) {
       .values({
         name: name,
         quantity: quantity,
+        supplier,
+        supplierPhone,
         price: price,
         imageUrl: imageUrlKey,
         categoryId: categoryId,

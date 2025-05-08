@@ -49,10 +49,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TStockItem } from "@/lib/db/schema";
+import { TStock, TStockItem } from "@/lib/db/schema";
 import { fetcher } from "@/lib/fetcher";
 import useSWR from "swr";
-import { AddStockModal } from "./AddStockModal";
+import { AddStockModal, ItemData } from "./AddStockModal";
 
 export default function ItemDetailPage() {
   const params = useParams();
@@ -61,11 +61,14 @@ export default function ItemDetailPage() {
   const { data } = useSWR<TStockItem>(`/api/item/${params.id}`, fetcher, {
     suspense: true,
   });
-  const item = data?.item;
+  const item = data;
   const itemStock = data?.stock;
 
   const [activeTab, setActiveTab] = useState("details");
   const [isAddStock, setIsAddStock] = useState(false);
+  const [isEditStock, setIsEditStock] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<ItemData>();
+  console.log(itemStock);
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -87,7 +90,9 @@ export default function ItemDetailPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="details">Item Details</TabsTrigger>
-              <TabsTrigger value="stock">Stock Locations (0)</TabsTrigger>
+              <TabsTrigger value="stock">
+                Stock Locations ({data?.stock.length ?? 0})
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="details" className="space-y-4">
               <div className="grid gap-6 md:grid-cols-2">
@@ -111,7 +116,7 @@ export default function ItemDetailPage() {
 
                     <div className="grid gap-2">
                       <Label htmlFor="category">Category</Label>
-                      <div className="text-sm">{data?.categories?.name}</div>
+                      <div className="text-sm">{data?.category?.name}</div>
                     </div>
                   </CardContent>
                 </Card>
@@ -202,18 +207,41 @@ export default function ItemDetailPage() {
                     <TableBody>
                       {itemStock?.map((stock) => (
                         <TableRow key={stock.id}>
-                          <TableCell className="font-medium"></TableCell>
+                          <TableCell className="font-medium">
+                            {stock.location.name}
+                          </TableCell>
                           <TableCell>{stock.quantity}</TableCell>
                           <TableCell>
                             <div
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold 
-                             `}
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                stock.status === "Available"
+                                  ? "bg-green-100 text-green-800"
+                                  : stock.status === "Lost"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : stock.status === "In Use"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : stock.status === "Damaged"
+                                        ? "bg-red-100 text-red-800"
+                                        : "bg-gray-100 text-gray-800"
+                              }`}
                             >
                               {stock.status}
                             </div>
                           </TableCell>
+                          <TableCell>
+                            {new Date(
+                              stock?.lastUpdated as string,
+                            ).toLocaleDateString()}
+                          </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setIsEditStock(true);
+                                setSelectedStock(stock);
+                              }}
+                            >
                               <Pencil className="h-4 w-4" />
                               <span className="sr-only">Edit</span>
                             </Button>
@@ -237,8 +265,9 @@ export default function ItemDetailPage() {
                   <div>
                     <span className="text-sm font-medium">
                       Total Quantity:{" "}
+                      {itemStock?.reduce((acc, cur) => acc + cur.quantity, 0) ??
+                        0}
                     </span>
-                    <span className="text-sm">0</span>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -248,9 +277,6 @@ export default function ItemDetailPage() {
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Add Stock
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Transfer Stock
                     </Button>
                   </div>
                 </CardFooter>
@@ -263,6 +289,13 @@ export default function ItemDetailPage() {
         <AddStockModal
           isModalOpen={isAddStock}
           onClose={() => setIsAddStock(false)}
+        />
+      )}
+      {isEditStock && (
+        <AddStockModal
+          isModalOpen={isEditStock}
+          onClose={() => setIsEditStock(false)}
+          data={selectedStock}
         />
       )}
     </div>

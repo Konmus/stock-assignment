@@ -6,18 +6,44 @@ import { uploadToMinio } from "@/lib/uploadToMinio";
 import { takeUniqueOrThrow } from "@/utils/takeUniqueOrThrow";
 import { eq, sql } from "drizzle-orm";
 import { createUpdateSchema } from "drizzle-zod";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const itemPatchSchema = createUpdateSchema(items).extend({
   imageUrl: z.any(),
 });
 export async function GET(
-  request: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
+    if (req.nextUrl.searchParams.get("quantity")) {
+      const quantityToAdd = Number(req.nextUrl.searchParams.get("quantity"));
+      const stockTotal = await db
+        .select({ quantity: stock.quantity })
+        .from(stock)
+        .where(eq(stock.inventoryItemId, id));
+      const itemTotal = await db
+        .select({ quantity: items.quantity })
+        .from(items)
+        .where(eq(items.id, id))
+        .then(takeUniqueOrThrow)
+        .catch(() => null);
+      const total = stockTotal.reduce((acc, cur) => acc + cur.quantity, 0);
+      const totalItem = itemTotal?.quantity ?? 0;
+      const quantityLeft = totalItem - total;
+      if (quantityLeft < 0) {
+        return NextResponse.json(
+          { status: 400 },
+          {
+            statusText:
+              "Can't add stock larger then the total quantity of item",
+          },
+        );
+      }
+      return NextResponse.json(quantityLeft);
+    }
     const result = await db
       .select({
         item: {
@@ -25,8 +51,9 @@ export async function GET(
           name: items.name,
           quantity: items.quantity,
           categoryId: items.categoryId,
-          imageUrl: items.imageUrl,
           supplier: items.supplier,
+          supplierPhone: items.supplierPhone,
+          imageUrl: items.imageUrl,
           price: items.price,
           createdAt: items.createdAt,
           updatedAt: items.updatedAt,
@@ -43,7 +70,7 @@ export async function GET(
             'id', ${stock.id},
             'inventoryItemId', ${stock.inventoryItemId},
             'locationId', ${stock.locationId},
-            'locationName', ${locations.name},
+            'location', ${locations},
             'quantity', ${stock.quantity},
             'status', ${stock.status},
             'notes', ${stock.notes},
@@ -96,9 +123,15 @@ export async function PUT(
     const requestBody = await request.json();
 
     // Validate input (using same schema, but all fields optional for PATCH)
-    const { name, categoryId, quantity, price, imageUrl } = itemPatchSchema
-      .partial()
-      .parse(requestBody);
+    const {
+      name,
+      categoryId,
+      supplier,
+      supplierPhone,
+      quantity,
+      price,
+      imageUrl,
+    } = itemPatchSchema.partial().parse(requestBody);
     const existingItem = await db
       .select({
         imageUrl: items.imageUrl,
@@ -116,6 +149,9 @@ export async function PUT(
     if (name !== undefined) updateData.name = name;
     if (quantity !== undefined) updateData.quantity = quantity;
     if (price !== undefined) updateData.price = price;
+    if (supplierPhone !== undefined) updateData.supplierPhone = supplierPhone;
+    if (supplier !== undefined) updateData.supplier = supplier;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
 
     if (imageUrl != undefined) {
       if (existingItem.imageUrl) {

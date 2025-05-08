@@ -257,6 +257,28 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Input
+                  name="supplier"
+                  type="text"
+                  label="Supplier:"
+                  register={register}
+                  watch={watch}
+                  errors={errors.supplier}
+                />
+              </div>
+              <div className="space-y-2">
+                <Input
+                  name="supplierPhone"
+                  type="text"
+                  label="Supplier Phone:"
+                  register={register}
+                  watch={watch}
+                  errors={errors.supplierPhone}
+                />
+              </div>
+            </div>
             <div className="gap-4">
               <UploadForm
                 setError={setError}

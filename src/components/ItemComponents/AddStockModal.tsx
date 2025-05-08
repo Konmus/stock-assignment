@@ -1,6 +1,6 @@
 import { TItem, TUser, users, ZItem, ZStock, ZUser } from "@/lib/db/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWRMutation from "swr/mutation";
 import { z } from "zod";
@@ -36,7 +36,7 @@ const validatedForm = ZStock.extend({
     .number()
     .int("Quantity must be an integer")
     .min(0, "Quantity cannot be negative"),
-  notes: z.string().optional(),
+  notes: z.string().nullish(),
   id: z.string().optional(),
   lastUpdated: z.string().optional(),
   status: z.string().nullish(),
@@ -82,7 +82,7 @@ export const AddStockModal = ({ isModalOpen, onClose, data }: ModalProps) => {
     },
     {
       onSuccess: () => {
-        mutate("/api/stock");
+        mutate(`/api/item/${queryParams.id}`);
       },
     },
   );
@@ -91,7 +91,7 @@ export const AddStockModal = ({ isModalOpen, onClose, data }: ModalProps) => {
     `/api/stock/${data?.id}`,
     {
       onSuccess: () => {
-        mutate("/api/stock");
+        mutate(`/api/item/${queryParams.id}`);
       },
     },
   );
@@ -108,13 +108,34 @@ export const AddStockModal = ({ isModalOpen, onClose, data }: ModalProps) => {
     },
     {
       onSuccess: () => {
-        mutate("/api/stock");
+        mutate(`/api/item/${queryParams.id}`);
       },
     },
+  );
+  const { data: quantityLeft } = useSWR<number>(
+    `/api/item/${queryParams.id}?quantity=true`,
+    fetcher,
+    {
+      suspense: true,
+    },
+  );
+  const quantityLeftOptions = Array.from(
+    { length: quantityLeft ?? 0 },
+    (_, i) => ({ label: (i + 1).toString(), value: i + 1 }),
   );
 
   const onSubmit = async (data: TData) => {
     try {
+      if (quantityLeft ?? 0 <= 0) {
+        setError(
+          "quantity",
+          {
+            type: "custom",
+            message: "All Item Quantity have been used in each location",
+          },
+          { shouldFocus: true },
+        );
+      }
       await trigger(data);
       toast.success(
         <div className="flex">
@@ -192,26 +213,41 @@ export const AddStockModal = ({ isModalOpen, onClose, data }: ModalProps) => {
             className="space-y-4"
           >
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-2 z-[4000]">
                 <SelectForm
                   name="locationId"
                   control={control}
                   placeholder="Location:"
                   options={locationsOptions}
+                  errors={errors.locationId}
+                />
+              </div>
+              <div className="space-y-2">
+                <SelectForm
+                  name="status"
+                  control={control}
+                  placeholder="Status:"
+                  options={statusOptions}
+                  errors={errors.status}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Input
+                <SelectForm
                   name="quantity"
-                  registerOptions={{ valueAsNumber: true }}
-                  step="any"
-                  type="number"
-                  label="Quantity:"
-                  register={register}
-                  watch={watch}
+                  control={control}
+                  isClearable={false}
+                  placeholder="Quantity:"
+                  options={
+                    data
+                      ? Array.from({ length: data.quantity }, (_, i) => ({
+                          label: (i + 1).toString(),
+                          value: i + 1,
+                        }))
+                      : quantityLeftOptions
+                  }
                   errors={errors.quantity}
                 />
               </div>
