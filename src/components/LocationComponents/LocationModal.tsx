@@ -59,9 +59,9 @@ interface ModalProps {
 export const LocationModal = ({ isModalOpen, onClose, data }: ModalProps) => {
   const imageUrl = data?.imageUrl
     ? `http://${process.env.NEXT_PUBLIC_BASE_URL}:9000/item-photo/${data.imageUrl}`
-    : null;
+    : undefined;
   const { data: imageFile } = useSWR<File>(
-    imageUrl ? [imageUrl, data?.imageUrl] : null, // Pass filename along with URL
+    imageUrl ? [imageUrl, data?.imageUrl] : undefined, // Pass filename along with URL
     ([url, filename]) => fetcherBlob(url, filename as string), // Fetcher now receives both
     {
       suspense: true,
@@ -81,7 +81,7 @@ export const LocationModal = ({ isModalOpen, onClose, data }: ModalProps) => {
     defaultValues: {
       name: data?.name || "",
       description: data?.description || "",
-      imageUrl: data ? [imageFile] : [],
+      imageUrl: data ? [imageFile] : undefined,
     },
   });
 
@@ -202,6 +202,7 @@ export const LocationModal = ({ isModalOpen, onClose, data }: ModalProps) => {
     }
   };
   console.log(errors);
+  console.log(data);
 
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && onClose()}>
@@ -243,7 +244,7 @@ export const LocationModal = ({ isModalOpen, onClose, data }: ModalProps) => {
               setError={setError}
               control={control}
               name="imageUrl"
-              errors={errors.imageUrl && errors.imageUrl[0]}
+              errors={errors.imageUrl as any}
             />
           </div>
           <DialogFooter>

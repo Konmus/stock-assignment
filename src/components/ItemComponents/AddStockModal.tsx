@@ -218,6 +218,7 @@ export const AddStockModal = ({ isModalOpen, onClose, data }: ModalProps) => {
                   name="locationId"
                   control={control}
                   placeholder="Location:"
+                  isClearable={false}
                   options={locationsOptions}
                   errors={errors.locationId}
                 />
@@ -227,6 +228,7 @@ export const AddStockModal = ({ isModalOpen, onClose, data }: ModalProps) => {
                   name="status"
                   control={control}
                   placeholder="Status:"
+                  isClearable={false}
                   options={statusOptions}
                   errors={errors.status}
                 />

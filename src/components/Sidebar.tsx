@@ -14,17 +14,13 @@ import {
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import { MdHome, MdOutlineInventory2 } from "react-icons/md";
+import { FaSearchLocation } from "react-icons/fa";
+import { CiUser } from "react-icons/ci";
+import { BiCategory } from "react-icons/bi";
 import { NavUser } from "./SidebarFooter";
 import { Session } from "next-auth";
 
 export const navItems = [
-  {
-    title: "Overview",
-    url: "/overview",
-    buttonPlaceholder: null,
-    hasPlaceholder: false,
-    icon: <MdHome />,
-  },
   {
     title: "Item",
     url: "/item",
@@ -39,7 +35,7 @@ export const navItems = [
     buttonPlaceholder: "Add Location",
     buttonPlaceholderEdit: "Edit Location",
     hasPlaceholder: true,
-    icon: <MdOutlineInventory2 />,
+    icon: <FaSearchLocation />,
   },
   {
     title: "Category",
@@ -47,7 +43,7 @@ export const navItems = [
     buttonPlaceholder: "Add Category",
     buttonPlaceholderEdit: "Edit Category",
     hasPlaceholder: true,
-    icon: <MdOutlineInventory2 />,
+    icon: <BiCategory />,
   },
   {
     title: "User",
@@ -55,7 +51,7 @@ export const navItems = [
     buttonPlaceholder: "Add User",
     buttonPlaceholderEdit: "Edit User",
     hasPlaceholder: true,
-    icon: <MdOutlineInventory2 />,
+    icon: <CiUser />,
   },
 ];
 

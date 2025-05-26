@@ -69,26 +69,6 @@ export function ItemTable() {
       enableSorting: true,
     },
     {
-      accessorKey: "category",
-      header: "Category",
-      cell: ({ row }) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs ${
-            row.getValue("category") === "Electronics"
-              ? "bg-blue-100 text-blue-800"
-              : row.getValue("category") === "Furniture"
-                ? "bg-green-100 text-green-800"
-                : row.getValue("category") === "Clothing"
-                  ? "bg-purple-100 text-purple-800"
-                  : "bg-gray-100 text-gray-800"
-          }`}
-        >
-          {row.getValue("category")}
-        </span>
-      ),
-      enableSorting: true,
-    },
-    {
       accessorKey: "quantity",
       header: "Quantity",
       cell: ({ row }) => <span>{row.getValue("quantity")}</span>,
