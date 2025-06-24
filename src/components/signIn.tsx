@@ -45,7 +45,7 @@ const SignIn = () => {
       }
       if (res?.code !== "invalid_password") {
         const decodedUrl = decodeURIComponent(callbackUrl ?? "");
-        router.push(callbackUrl ? decodedUrl : `/overview`);
+        router.push(callbackUrl ? decodedUrl : `/item`);
       }
     } catch (err) {
       return err;
@@ -64,7 +64,7 @@ const SignIn = () => {
               register={register}
               name="username"
               errors={errors.username}
-              label="Email:"
+              label="Email or Username:"
             />
           </div>
           <div className="mb-4">

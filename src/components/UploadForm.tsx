@@ -28,20 +28,8 @@ import toast from "react-hot-toast";
 import { GroupBase, OptionsOrGroups, SelectInstance } from "react-select";
 import { Label } from "@radix-ui/react-dropdown-menu";
 
-const formSchema = z.object({
-  files: z
-    .array(z.custom<File>())
-    .min(1, "Please select at least one file")
-    .max(2, "Please select up to 2 files")
-    .refine((files) => files.every((file) => file.size <= 5 * 1024 * 1024), {
-      message: "File size must be less than 5MB",
-      path: ["files"],
-    }),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 interface UploadFormProps<T extends FieldValues> extends UseControllerProps<T> {
-  errors?: FieldError;
+  errors?: string;
   placeholder?: string;
   className?: string;
   //eslint-disable-next-line
@@ -68,7 +56,6 @@ export function UploadForm<T extends FieldValues>({
         <>
           <Label className="font-semibold font-xl mb-1">Image:</Label>
           <FileUpload
-            value={field.value}
             onValueChange={field.onChange}
             multiple={false}
             accept="image/*"
@@ -92,22 +79,23 @@ export function UploadForm<T extends FieldValues>({
             </FileUploadDropzone>
             {errors && (
               <div className="mt-1 mb-1">
-                {errors && <p className="error-message">{errors.message}</p>}
+                {errors && <p className="error-message">{errors}</p>}
               </div>
             )}
             <FileUploadList>
-              {field?.value?.map((file: File, index: number) => (
-                <FileUploadItem key={index} value={file}>
-                  <FileUploadItemPreview />
-                  <FileUploadItemMetadata />
-                  <FileUploadItemDelete asChild>
-                    <Button variant="ghost" size="icon" className="size-7">
-                      <X />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </FileUploadItemDelete>
-                </FileUploadItem>
-              ))}
+              {field.value &&
+                field?.value?.map((file: File, index: number) => (
+                  <FileUploadItem key={index} value={file}>
+                    <FileUploadItemPreview />
+                    <FileUploadItemMetadata />
+                    <FileUploadItemDelete asChild>
+                      <Button variant="ghost" size="icon" className="size-7">
+                        <X />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </FileUploadItemDelete>
+                  </FileUploadItem>
+                ))}
             </FileUploadList>
           </FileUpload>
         </>

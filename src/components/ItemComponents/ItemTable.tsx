@@ -16,19 +16,22 @@ import { Button } from "@/components/ui/button";
 import { ItemData, ItemModal, TData } from "./ItemModal";
 import { TItem, TSelectItem } from "@/lib/db/schema";
 import { useRouter } from "next/navigation";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 // Define columns
 
 export function ItemTable() {
   const [openModal, setOpenModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<TSelectItem>();
-  const [isAdding, setIsAdding] = useState(false);
-  const [isEditting, setIsEditting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const swrKey = searchQuery
+    ? `/api/item?name=${encodeURIComponent(searchQuery)}`
+    : "/api/item";
   const router = useRouter();
 
   // Fetch data with useSWR
-  const { data: items, error } = useSWR<TSelectItem[]>("/api/item", fetcher, {
+  const { data: items, error } = useSWR<TSelectItem[]>(swrKey, fetcher, {
     suspense: true,
   });
 
@@ -61,6 +64,7 @@ export function ItemTable() {
           <span>No Image</span>
         );
       },
+      enableSorting: false,
     },
     {
       accessorKey: "name",
@@ -107,6 +111,18 @@ export function ItemTable() {
 
   return (
     <div className="p-4 bg-white shadow rounded-lg">
+      <div className="ml-auto flex items-center gap-4 mb-5">
+        <form className="relative hidden md:block">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search Items..."
+            className="w-64 rounded-lg bg-background pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </form>
+      </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">

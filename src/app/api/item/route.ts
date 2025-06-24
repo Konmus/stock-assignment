@@ -2,16 +2,25 @@ import { db } from "@/lib/db";
 import { items } from "@/lib/db/schema";
 import { handleErrorRoute } from "@/lib/handleRouteError";
 import { uploadToMinio } from "@/lib/uploadToMinio";
+import { ilike } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const itemPostSchema = createInsertSchema(items).extend({
   imageUrl: z.any(),
 });
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const result = await db.select().from(items);
+    //const result = await db.select().from(items);
+    const { searchParams } = new URL(req.url);
+    const name = searchParams.get("name");
+
+    const query = db.select().from(items);
+    if (name) {
+      query.where(ilike(items.name, `%${name}%`));
+    }
+    const result = await query;
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return handleErrorRoute(error);

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
 import { noPassUser } from "@/lib/userSelect";
 import { handleErrorRoute } from "@/lib/handleRouteError";
+import * as bcrypt from "bcrypt";
 // Initialize database connection
 
 // Validation schemas
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const validatedData = createUserSchema.parse(body);
+    const hashPassword = bcrypt.hash(validatedData.password as string, 10);
 
     const [newUser] = await db
       .insert(users)
@@ -32,7 +34,7 @@ export async function POST(request: Request) {
         username: validatedData.username,
         email: validatedData.email,
         name: validatedData.name,
-        password: validatedData.password, // In production, hash the password
+        password: await hashPassword, // In production, hash the password
         role: validatedData.role,
       })
       .returning();

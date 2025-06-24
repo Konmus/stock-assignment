@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
+import React from "react";
 import { MdHome, MdOutlineInventory2 } from "react-icons/md";
 import { FaSearchLocation } from "react-icons/fa";
 import { CiUser } from "react-icons/ci";
@@ -28,6 +29,7 @@ export const navItems = [
     buttonPlaceholderEdit: "Edit Item",
     hasPlaceholder: true,
     icon: <MdOutlineInventory2 />,
+    role: ["user", "admin"],
   },
   {
     title: "Location",
@@ -36,6 +38,7 @@ export const navItems = [
     buttonPlaceholderEdit: "Edit Location",
     hasPlaceholder: true,
     icon: <FaSearchLocation />,
+    role: ["user", "admin"],
   },
   {
     title: "Category",
@@ -43,6 +46,7 @@ export const navItems = [
     buttonPlaceholder: "Add Category",
     buttonPlaceholderEdit: "Edit Category",
     hasPlaceholder: true,
+    role: ["user", "admin"],
     icon: <BiCategory />,
   },
   {
@@ -51,6 +55,7 @@ export const navItems = [
     buttonPlaceholder: "Add User",
     buttonPlaceholderEdit: "Edit User",
     hasPlaceholder: true,
+    role: ["admin"],
     icon: <CiUser />,
   },
 ];
@@ -73,19 +78,23 @@ export function AppSidebar({ session }: AppSideBarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a
-                      href={item.url}
-                      className={cn(
-                        path == item.url ? "bg-sidebar-accent" : "",
-                      )}
-                    >
-                      {item.icon}
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <React.Fragment key={item.title}>
+                  {item.role.includes(session?.user.role) && (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <a
+                          href={item.url}
+                          className={cn(
+                            path == item.url ? "bg-sidebar-accent" : "",
+                          )}
+                        >
+                          {item.icon}
+                          <span>{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                </React.Fragment>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>

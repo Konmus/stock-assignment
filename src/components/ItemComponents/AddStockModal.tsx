@@ -28,6 +28,7 @@ import { UploadForm } from "../UploadForm";
 import { filetoBase64 } from "@/lib/binaryToBase64";
 import { ISelect } from "@/types/SelectOptions";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const validatedForm = ZStock.extend({
   inventoryItemId: z.string().min(1, "Item is required"),
@@ -53,6 +54,7 @@ interface ModalProps {
 }
 export const AddStockModal = ({ isModalOpen, onClose, data }: ModalProps) => {
   const queryParams = useParams();
+  const router = useRouter();
   const {
     register,
     control,
@@ -186,6 +188,7 @@ export const AddStockModal = ({ isModalOpen, onClose, data }: ModalProps) => {
       console.log(err);
       toast.error("An error occured while creating the data.");
       return err;
+    } finally {
     }
   };
   console.log(errors);

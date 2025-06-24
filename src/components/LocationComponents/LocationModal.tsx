@@ -81,7 +81,7 @@ export const LocationModal = ({ isModalOpen, onClose, data }: ModalProps) => {
     defaultValues: {
       name: data?.name || "",
       description: data?.description || "",
-      imageUrl: data ? [imageFile] : undefined,
+      imageUrl: data ? [imageFile] : [],
     },
   });
 

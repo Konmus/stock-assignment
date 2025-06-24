@@ -82,6 +82,7 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
       imageUrl: data ? [imageFile] : [],
     },
   });
+  console.log(watch("imageUrl"));
   const { trigger, isMutating: isAdding } = useSWRMutation(
     "/api/item/",
     async (url: string, { arg }: { arg: TData }) => {
@@ -284,7 +285,7 @@ export const ItemModal = ({ isModalOpen, onClose, data }: ModalProps) => {
                 setError={setError}
                 control={control}
                 name="imageUrl"
-                errors={errors.imageUrl && errors.imageUrl[0]}
+                errors={errors.imageUrl && errors.imageUrl.message}
               />
             </div>
 
