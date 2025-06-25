@@ -53,7 +53,6 @@ export async function PATCH(
       .set({
         ...(name && { name }),
         ...(description !== undefined && { description }),
-        updatedAt: new Date(),
       })
       .where(eq(categories.id, id))
       .returning();

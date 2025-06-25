@@ -40,7 +40,7 @@ const validatedForm = ZLocation.extend({
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   id: z.string().optional(),
-  itemCount: z.string().nullish(),
+  itemCount: z.number().nullish(),
 });
 const validatedFormImage = validatedForm.extend({
   imageUrl: z.string().nullish(),
@@ -244,7 +244,7 @@ export const LocationModal = ({ isModalOpen, onClose, data }: ModalProps) => {
               setError={setError}
               control={control}
               name="imageUrl"
-              errors={errors.imageUrl as any}
+              errors={errors.imageUrl && errors.imageUrl.message}
             />
           </div>
           <DialogFooter>

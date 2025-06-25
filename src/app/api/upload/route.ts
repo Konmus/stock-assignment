@@ -99,7 +99,7 @@ export async function DELETE(req: NextRequest) {
         },
       );
     });
-    return deleteObject;
+    return NextResponse.json("Image has been deleted");
   } catch (err) {
     return NextResponse.json(err);
   }

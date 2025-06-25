@@ -23,22 +23,16 @@ const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
       id: "loc1",
       name: "Classroom A101",
       description: "Main classroom for Grade 10",
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     {
       id: "loc2",
       name: "Science Lab",
       description: "Laboratory for science experiments",
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     {
       id: "loc3",
       name: "Storage Room B",
       description: "Storage for school supplies",
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
   ];
 
@@ -47,22 +41,16 @@ const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
       id: "cat1",
       name: "Textbooks",
       description: "Books used for academic courses",
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     {
       id: "cat2",
       name: "Electronics",
       description: "Electronic devices for teaching",
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     {
       id: "cat3",
       name: "Furniture",
       description: "Classroom and office furniture",
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
   ];
 
@@ -75,8 +63,6 @@ const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
       supplier: "EduBooks Inc.",
       supplierPhone: "123-456-7890",
       price: 25.99,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     },
     {
       id: "item2",
@@ -86,8 +72,6 @@ const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
       supplier: "TechSupplies Ltd.",
       supplierPhone: "987-654-3210",
       price: 299.99,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     },
     {
       id: "item3",
@@ -97,8 +81,6 @@ const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
       supplier: "FurnitureCo",
       supplierPhone: "555-123-4567",
       price: 75.0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     },
   ];
 
@@ -110,7 +92,6 @@ const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
       quantity: 20,
       status: "Available",
       notes: "Textbooks for Class A101",
-      lastUpdated: new Date().toISOString(),
     },
     {
       id: "stock2",
@@ -119,7 +100,6 @@ const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
       quantity: 30,
       status: "Available",
       notes: "Stored textbooks",
-      lastUpdated: new Date().toISOString(),
     },
     {
       id: "stock3",
@@ -128,7 +108,6 @@ const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
       quantity: 3,
       status: "Available",
       notes: "Projectors for Science Lab",
-      lastUpdated: new Date().toISOString(),
     },
     {
       id: "stock4",
@@ -137,7 +116,6 @@ const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
       quantity: 30,
       status: "Available",
       notes: "Desks for Classroom A101",
-      lastUpdated: new Date().toISOString(),
     },
   ];
 
@@ -147,21 +125,18 @@ const seedUsers = async (db: NodePgDatabase<Record<string, never>>) => {
       previousQuantity: 25,
       newQuantity: 20,
       changeReason: "Distributed 5 textbooks to students",
-      createdAt: new Date(),
     },
     {
       stockId: "stock2",
       previousQuantity: 0,
       newQuantity: 30,
       changeReason: "Received new shipment of textbooks",
-      createdAt: new Date(),
     },
     {
       stockId: "stock3",
       previousQuantity: 2,
       newQuantity: 3,
       changeReason: "Added projector after repair",
-      createdAt: new Date(),
     },
   ];
   const userData: UserInsert[] = [

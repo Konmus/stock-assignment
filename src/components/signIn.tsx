@@ -21,8 +21,6 @@ const signInSchema = z.object({
 
 type TSignIn = z.infer<typeof signInSchema>;
 const SignIn = () => {
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") as string;
   const router = useRouter();
   const {
     register,
@@ -44,8 +42,8 @@ const SignIn = () => {
         setError("password", { type: "custom", message: "Wrong password" });
       }
       if (res?.code !== "invalid_password") {
-        const decodedUrl = decodeURIComponent(callbackUrl ?? "");
-        router.push(callbackUrl ? decodedUrl : `/item`);
+        //const decodedUrl = decodeURIComponent(callbackUrl ?? "");
+        router.push(`/item`);
       }
     } catch (err) {
       return err;

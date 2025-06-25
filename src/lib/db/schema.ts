@@ -51,8 +51,8 @@ export const locations = pgTable("locations", {
   name: varchar("name", { length: 100 }).notNull(),
   imageUrl: text("imageUrl"),
   description: text("description"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
 });
 // Audit log table
 export const auditLog = pgTable("audit_log", {
@@ -121,7 +121,7 @@ export const stockHistory = pgTable("stock_history", {
   newQuantity: integer("new_quantity").notNull(),
   changeReason: varchar("change_reason", { length: 255 }),
   userId: text("user_id").references(() => users.id), // For future user authentication
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
 });
 export const categoriesRelations = relations(categories, ({ many }) => ({
   inventoryItems: many(items),

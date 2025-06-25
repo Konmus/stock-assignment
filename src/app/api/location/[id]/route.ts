@@ -74,7 +74,7 @@ export async function PATCH(
       .update(locations)
       .set({
         ...updateData,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(locations.id, id))
       .returning();
